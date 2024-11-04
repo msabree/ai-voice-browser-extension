@@ -1,0 +1,22 @@
+{
+    "version": "1.0.0",
+    "manifest_version": 3,
+    "name": "Cookie Jar Extension",
+    "description": "Use Google Gemini to understand what cookies are being set on your machine and take action to remove them.",
+    "action": {
+        "default_popup": "js/index.html",
+        "default_title": "Cookie Chrome Extension"
+    },
+    "permissions": [
+        "storage",
+        "tabs",
+        "activeTab",
+        "scripting"
+    ],
+    "content_scripts": [
+        {
+          "matches": ["https://*.com/*"],
+          "js": ["js/contentScript.js"]
+        }
+    ]
+}
