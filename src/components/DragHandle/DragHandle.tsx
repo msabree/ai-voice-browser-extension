@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import "./styles.css"
 import CookieJarIcon from '../../icons/CookieJar';
+import "./styles.css"
 
 const DragHandle = (props: any) => {
 
@@ -15,7 +15,7 @@ const DragHandle = (props: any) => {
 
   return (
     <div className="drag-handle" ref={setNodeRef} style={style} {...listeners} {...attributes}>
-      <CookieJarIcon width={100} height={100} fill={'#ffffff'} />
+      <CookieJarIcon width={60} height={80} fill={'#ffffff'} />
     </div>
   )
 }
