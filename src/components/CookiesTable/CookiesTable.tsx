@@ -20,9 +20,10 @@ export interface Cookie {
 
 interface CookiesTableProps {
   data: Cookie[]
+  onDelete: (name: string) => void
 }
 
-export default function CookiesTable({ data }: CookiesTableProps) {
+export default function CookiesTable({ data, onDelete }: CookiesTableProps) {
   return (
     <TableContainer sx={{ maxHeight: 500 }} component={Paper}>
       <Table sx={{ width: '100%' }} size="small" aria-label="a dense table">
@@ -49,7 +50,9 @@ export default function CookiesTable({ data }: CookiesTableProps) {
               <TableCell sx={{maxWidth: 150}}>{cookie.message}</TableCell>
               <TableCell>{cookie.should_delete ? 'Safe to delete': 'Consider keeping'}</TableCell>
               <TableCell>
-                <Button variant='outlined' color='warning'>DELETE</Button>
+                <Button variant='outlined' color='warning' onClick={() => {
+                  onDelete(cookie.cookie_name)
+                }}>DELETE</Button>
               </TableCell>
             </TableRow>
           ))}

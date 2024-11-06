@@ -1,4 +1,5 @@
 const path = require("path");
+const Dotenv = require("dotenv-webpack");
 const HTMLPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 
@@ -32,6 +33,7 @@ module.exports = {
         ],
     },
     plugins: [
+        new Dotenv(),
         new CopyPlugin({
             patterns: [
                 { from: "manifest.json", to: "../manifest.json" },

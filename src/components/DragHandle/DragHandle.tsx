@@ -3,7 +3,7 @@ import { useDraggable } from '@dnd-kit/core';
 import CookieJarIcon from '../../icons/CookieJar';
 import "./styles.css"
 
-const DragHandle = (props: any) => {
+const DragHandle = () => {
 
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: 'draggable',
