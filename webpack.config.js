@@ -36,7 +36,14 @@ module.exports = {
         new Dotenv(),
         new CopyPlugin({
             patterns: [
-                { from: "manifest.json", to: "../manifest.json" },
+                { 
+                    from: "manifest.json", 
+                    to: "../manifest.json" 
+                },
+                {
+                    from: path.resolve(__dirname, 'public/icons'),
+                    to: path.resolve(__dirname, 'dist/icons'),
+                }
             ],
         }),
         ...getHtmlPlugins(["index"]),

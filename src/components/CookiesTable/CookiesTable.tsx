@@ -29,11 +29,11 @@ export default function CookiesTable({ data, onDelete }: CookiesTableProps) {
       <Table sx={{ width: '100%' }} size="small" aria-label="a dense table">
         <TableHead>
           <TableRow>
-            <TableCell>Cookie Name</TableCell>
-            <TableCell>Category</TableCell>
-            <TableCell sx={{maxWidth: 50}}>AI Message</TableCell>
-            <TableCell>AI Suggestion</TableCell>
-            <TableCell></TableCell>
+            <TableCell sx={{maxWidth: 200, fontSize: 14}}>Cookie Name</TableCell>
+            <TableCell sx={{maxWidth: 200, fontSize: 14}}>Category</TableCell>
+            <TableCell sx={{width: 200, fontSize: 14}}>AI Message</TableCell>
+            <TableCell sx={{maxWidth: 200, fontSize: 14}}>AI Suggestion</TableCell>
+            <TableCell sx={{maxWidth: 200, fontSize: 14}}></TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -43,16 +43,22 @@ export default function CookiesTable({ data, onDelete }: CookiesTableProps) {
               sx={{ whiteSpace: 'normal',
                 wordWrap: 'break-word' }}
             >
-              <TableCell sx={{maxWidth: 50}} component="th" scope="row">
+              <TableCell sx={{maxWidth: 200, fontSize: 12}}>
                 {cookie.cookie_name}
               </TableCell>
-              <TableCell>{cookie.category}</TableCell>
-              <TableCell sx={{maxWidth: 150}}>{cookie.message}</TableCell>
-              <TableCell>{cookie.should_delete ? 'Safe to delete': 'Consider keeping'}</TableCell>
-              <TableCell>
-                <Button variant='outlined' color='warning' onClick={() => {
+              <TableCell sx={{maxWidth: 200, fontSize: 12}}>{cookie.category}</TableCell>
+              <TableCell sx={{width: 200, fontSize: 12}}>{cookie.message}</TableCell>
+              <TableCell sx={{maxWidth: 200, fontSize: 12}}>{cookie.should_delete ? 'Safe to delete': 'Safe to keep'}</TableCell>
+              <TableCell sx={{maxWidth: 200, fontSize: 12}}>
+                <Button 
+                  sx={{textTransform: 'none', fontSize: 12}}
+                  size='small' 
+                  disabled={!cookie.should_delete} 
+                  variant='outlined' 
+                  color='warning' 
+                  onClick={() => {
                   onDelete(cookie.cookie_name)
-                }}>DELETE</Button>
+                }}>Delete</Button>
               </TableCell>
             </TableRow>
           ))}

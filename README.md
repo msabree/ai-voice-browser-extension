@@ -1,6 +1,6 @@
-# Cookie Jar Extension
+# Cookie Jar - Chrome Extension
 
-The **Cookie Jar Extension** is a browser extension that integrates the Google Gemini AI engine to analyze and manage cookies from websites. It allows users to easily delete unnecessary or invasive cookies, improving their browsing experience. This project is open-source and aims to help users manage cookies efficiently.
+The **Cookie Jar** is a browser extension that integrates the Google Gemini AI engine to analyze and manage cookies from websites. It allows users to easily delete unnecessary or invasive cookies, improving their browsing experience. This project is open-source and aims to help users manage cookies efficiently.
 
 ## Table of Contents
 
