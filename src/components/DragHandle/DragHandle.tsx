@@ -1,8 +1,8 @@
 import React from 'react';
 import { useDraggable } from '@dnd-kit/core';
+import { Badge } from '@mui/material';
 import CookieJarIcon from '../../icons/CookieJar';
 import "./styles.css"
-import { Badge } from '@mui/material';
 
 interface DragHandleProps {
   badgeCount: number

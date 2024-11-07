@@ -9,7 +9,7 @@ import Button from '@mui/material/Button/Button';
 import DragHandle from '../DragHandle/DragHandle';
 import CookiesTable, { Cookie } from '../CookiesTable/CookiesTable';
 import "./styles.css";
-import { Box, Tabs, Tab } from '@mui/material';
+import { Box, Tabs, Tab, CircularProgress } from '@mui/material';
 import PrivacySummary from '../PrivacySummarizer/PrivacySummarizer';
 
 interface TabPanelProps {
@@ -21,7 +21,8 @@ interface TabPanelProps {
 // THIS GETS INJECT INTO THE PAGE ITSELF
 const ContentScript = () => {
     const [tabIndex, setTabIndex] = useState(0);
-    const [top, setTop] = useState(0);
+    const [top, setTop] = useState(50);
+    const [isLoading, setIsLoading] = useState(false)
     const [open, setOpen] = useState(false)
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
     const [aiCookiesJson, setAiCookiesJson] = useState<Cookie[] | null>(null)
@@ -41,10 +42,10 @@ const ContentScript = () => {
     }
 
     const isPrivacyOrPolicyPage = (): boolean => {
-        const regex = /(?:privacy|policy|terms|agreement|cookies?|gdpr?|security)(?:[\w/-]*)(?:\.html?)?$/i;
+        const regex = /(?:privacy|policy|legal|terms|agreement|cookies?|gdpr?|security)(?:[\w/-]*)(?:\.html?)?$/i;
         const url = window.location.pathname.toLowerCase(); // Check only the path part of the URL
         return regex.test(url);
-      };
+    };
 
     const getBadgeCount = () => {
         return (aiCookiesJson ?? [])?.filter((cookie) => cookie.should_delete).length
@@ -57,6 +58,7 @@ const ContentScript = () => {
 
     const analyzeCookies = () => {
         if (document.cookie.trim() !== '') {
+            setIsLoading(true)
             const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
@@ -71,8 +73,8 @@ const ContentScript = () => {
             so please return valid JSON only and nothing else.`
 
             model.generateContent(prompt).then((result) => {
+                setIsLoading(false)
                 const rawJsonString = result.response.text();
-                console.log(rawJsonString)
                 // this format is frustrating. Gemini adds extra text that i do not want
                 const firstPart = rawJsonString.split("```json")[1]
                 const jsonStringOnly = firstPart.split("```")[0]
@@ -83,13 +85,14 @@ const ContentScript = () => {
                 catch (e) {
                     console.log(e)
                 }
-                if (jsonCookieData?.cookies) {
-                    setAiCookiesJson(jsonCookieData.cookies)
-                }
-                else {
+                if (Array.isArray(jsonCookieData)) {
                     setAiCookiesJson(jsonCookieData)
                 }
+                else {
+                    setAiCookiesJson(Object.values(jsonCookieData))
+                }
             }).catch((err) => {
+                setIsLoading(false)
                 console.log(err)
             })
         }
@@ -110,20 +113,19 @@ const ContentScript = () => {
             `;
 
         model.generateContent(prompt).then((result) => {
-            console.log(result.response.text())
-            try{
+            try {
 
                 const aiResponseRawText = result.response.text();
-                if(aiResponseRawText.includes('```html')){
+                if (aiResponseRawText.includes('```html')) {
                     // parse out the html
                     const firstPart = aiResponseRawText.split("```html")[1]
                     const htmlStringOnly = firstPart.split("```")[0]
                     setSummary(htmlStringOnly)
-                } else{
+                } else {
                     setSummary(aiResponseRawText)
                 }
             }
-            catch(e){
+            catch (e) {
                 setSummary('Unable to provide an AI Privacy Summary for this site. Please try again later.')
                 console.log(e)
             }
@@ -151,8 +153,7 @@ const ContentScript = () => {
             </div>
         );
     }
-
-
+    
     return (
         <div>
             <DndContext onDragEnd={handleDragEnd} modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}>
@@ -160,7 +161,7 @@ const ContentScript = () => {
                     <DragHandle badgeCount={getBadgeCount()} />
                     <Button
                         size='small'
-                        sx={{ width: 10, margin: 0, padding: 0, fontSize: 14 }}
+                        sx={{ width: 10, margin: 0, padding: 0, fontSize: 14, textTransform: 'none' }}
                         onClick={(event) => {
                             setOpen(!open)
                             if (open) {
@@ -195,10 +196,33 @@ const ContentScript = () => {
                         </Tabs>
                     </Box>
                     <CustomTabPanel value={tabIndex} index={0}>
-                        <CookiesTable data={aiCookiesJson ?? []} onDelete={(cookie) => {
-                            deleteCookie(cookie)
-                            analyzeCookies()
-                        }} />
+                        <Button
+                            sx={{ textTransform: 'none', marginBottom: 3 }}
+                            color='warning' variant='outlined'
+                            disabled={isLoading || (aiCookiesJson ?? []).filter((cookie) => cookie.should_delete).length === 0}
+                            onClick={() => {
+                                (aiCookiesJson ?? []).forEach((cookie) => {
+                                    if (cookie.should_delete) {
+                                        deleteCookie(cookie.cookie_name)
+                                    }
+                                })
+                                analyzeCookies()
+                            }}>Delete All Recommended</Button>
+                        {isLoading && <CircularProgress />}
+                        <div style={{fontSize: '12px'}}>
+                            <span style={{fontWeight: 'bold'}}>Disclaimer:</span> Some cookies may reappear after deletion. This could indicate that they are 
+                            essential for the proper operation of the website or application. In some cases, 
+                            the AI may mistakenly flag necessary cookies as invasive, leading to their 
+                            unintended removal. Please ensure that your browser settings and cookies are 
+                            reviewed if you experience any issues after deletion.
+                        </div>
+                        <br></br>
+                        <CookiesTable 
+                            isLoading={isLoading}
+                            data={aiCookiesJson ?? []} onDelete={(cookie) => {
+                                deleteCookie(cookie)
+                                analyzeCookies()
+                            }} />
                     </CustomTabPanel>
                     <CustomTabPanel value={tabIndex} index={1}>
                         <PrivacySummary summary={summary} errorMessage={summaryError} summarize={() => {
@@ -206,7 +230,7 @@ const ContentScript = () => {
                                 setSummaryError('')
                                 summarizePrivacyPolicy()
                             }
-                            else{
+                            else {
                                 setSummaryError('Privacy policy or terms page not detected. Please visit a valid privacy page and try again.')
                             }
                         }} />
