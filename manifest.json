@@ -19,7 +19,7 @@
     },
     "content_scripts": [
         {
-          "matches": ["https://*.com/*"],
+          "matches": ["<all_urls>"],
           "js": ["js/contentScript.js"]
         }
     ]
