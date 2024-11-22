@@ -1,5 +1,6 @@
 import React from 'react';
 import Button from '@mui/material/Button/Button';
+import Markdown from 'react-markdown';
 
 interface PrivacySummaryProps {
     summary?: string
@@ -13,7 +14,7 @@ const PrivacySummary = ({ summary, errorMessage, summarize }: PrivacySummaryProp
       <Button color='info' variant='contained' sx={{ fontSize: 14 }} onClick={() => {
         summarize()
       }}>Summarize</Button>
-      {summary && <div className='info' dangerouslySetInnerHTML={{__html: summary}} />}
+      {summary && <Markdown>{summary}</Markdown>}
       {errorMessage && <div className='info'>{errorMessage}</div>}
     </div>
   );

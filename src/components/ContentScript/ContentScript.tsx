@@ -98,40 +98,58 @@ const ContentScript = () => {
         }
     }
 
-    const summarizePrivacyPolicy = () => {
-        const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const innerText = document.body.innerText;
+    // use the Google built in ai to summarize the job posting
+    const summarizePrivacyPolicy = async () => {
+        const ai = (window as any).ai;
+        setSummaryError('')
+        if ('ai' in window && 'summarizer' in ai) {
+            const capabilities = (await ai.summarizer.capabilities()).available;
+            console.log(capabilities)
+            if (capabilities === 'no') {
+                console.log('AI Summarizer not supported in this browser.')
+                setSummaryError("AI Sumamrizer not supported in  this browser.")
+                return
+            }
+            else if (capabilities === 'readily') {
+                const options = {
+                    sharedContext: `Summarize this privacy policy: ${document.body.innerText.slice(0, 30000)}`,
+                    type: 'key-points',
+                    format: 'markdown',
+                    length: 'medium',
+                };
 
-        const prompt = `
-                Review the following privacy policy or terms of service text. 
-                Based on language clarity, transparency, and user protection measures, 
-                provide a privacy and trust score. Consider factors such as data handling, 
-                user rights, and security practices. Your assessment should reflect whether 
-                the site is safe and prioritizes user privacy effectively. Return the result 
-                as HTML for injection into my page. Here is the data: ${innerText}"
-            `;
+                try {
+                    const summarizer = await ai.summarizer.create(options)
+                    const summary = await summarizer.summarize(`Summarize it briefly and make it look pretty.`)
 
-        model.generateContent(prompt).then((result) => {
-            try {
-
-                const aiResponseRawText = result.response.text();
-                if (aiResponseRawText.includes('```html')) {
-                    // parse out the html
-                    const firstPart = aiResponseRawText.split("```html")[1]
-                    const htmlStringOnly = firstPart.split("```")[0]
-                    setSummary(htmlStringOnly)
-                } else {
-                    setSummary(aiResponseRawText)
+                    console.log(summary)
+                    setSummary(summary)
+                }
+                catch (e) {
+                    console.log(e)
                 }
             }
-            catch (e) {
-                setSummary('Unable to provide an AI Privacy Summary for this site. Please try again later.')
-                console.log(e)
+            else if (capabilities === 'after-download') {
+                console.log('AI Summarizer is ready to use after downloading the model.')
+                setSummaryError("AI Sumamrizer needs to download first. Try again shortly...")
+                await ai.summarizer.create({
+                    monitor(m: any) {
+                        m.addEventListener('downloadprogress', (e: any) => {
+                            console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
+                        });
+                    }
+                });
+                return;
             }
-        }).catch((err) => {
-            console.log(err)
-        })
+            else {
+                console.log('AI Summarizer not supported in this browser.')
+                setSummaryError("AI Sumamrizer not supported in  this browser.")
+                return
+            }
+        } else {
+            console.log('AI Summarizer not supported in this browser.')
+            setSummaryError("AI Sumamrizer not supported in  this browser.")
+        }
     }
 
     useEffect(() => {
@@ -153,7 +171,7 @@ const ContentScript = () => {
             </div>
         );
     }
-    
+
     return (
         <div>
             <DndContext onDragEnd={handleDragEnd} modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}>
@@ -209,15 +227,15 @@ const ContentScript = () => {
                                 analyzeCookies()
                             }}>Delete All Recommended</Button>
                         {isLoading && <CircularProgress />}
-                        <div style={{fontSize: '12px'}}>
-                            <span style={{fontWeight: 'bold'}}>Disclaimer:</span> Some cookies may reappear after deletion. This could indicate that they are 
-                            essential for the proper operation of the website or application. In some cases, 
-                            the AI may mistakenly flag necessary cookies as invasive, leading to their 
-                            unintended removal. Please ensure that your browser settings and cookies are 
+                        <div style={{ fontSize: '12px' }}>
+                            <span style={{ fontWeight: 'bold' }}>Disclaimer:</span> Some cookies may reappear after deletion. This could indicate that they are
+                            essential for the proper operation of the website or application. In some cases,
+                            the AI may mistakenly flag necessary cookies as invasive, leading to their
+                            unintended removal. Please ensure that your browser settings and cookies are
                             reviewed if you experience any issues after deletion.
                         </div>
                         <br></br>
-                        <CookiesTable 
+                        <CookiesTable
                             isLoading={isLoading}
                             data={aiCookiesJson ?? []} onDelete={(cookie) => {
                                 deleteCookie(cookie)
