@@ -4,14 +4,18 @@ import { SUPPORTED_COMMANDS } from "../constants";
 // So... insead of it JUST returning a command from the array it returns a bunch of garbage text as well.
 // So.. here's a helper function to extract the command from the garbage text.
 export const extractCommandFromText = (text: string) => {
-    // Loop through actions and return the first one found in the text
-    for (let action of SUPPORTED_COMMANDS) {
-        if (text.toLocaleLowerCase().includes(action.toLocaleLowerCase())) {
-            return action;
+    // Loop through each command in the order they appear in SUPPORTED_COMMANDS
+    for (const command of SUPPORTED_COMMANDS) {
+        // Create a case-insensitive regular expression for each command
+        const commandRegex = new RegExp(`\\b${command}\\b`, 'i');
+        
+        // Check if the command is found in the text
+        if (commandRegex.test(text)) {
+            return command;  // Return the first command found
         }
     }
-
-    // If no action is found, return null (or you can return an empty string)
+    
+    // Return null if no command is found
     return null;
 }
 

@@ -21,7 +21,7 @@ const DragHandle = ({ badgeCount }: DragHandleProps) => {
   return (
     <div className="drag-handle" ref={setNodeRef} style={style} {...listeners} {...attributes}>
       <Badge badgeContent={badgeCount} color='warning' anchorOrigin={{ vertical: 'top', horizontal: 'left' }}>
-        <Logo width={50} height={70} fill={'#ffffff'} />
+        <Logo width={64} height={64} fill={'#ffffff'} />
       </Badge>
     </div>
   )

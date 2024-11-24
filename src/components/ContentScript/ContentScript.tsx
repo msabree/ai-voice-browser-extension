@@ -17,7 +17,8 @@ import "./styles.css";
 const ContentScript = () => {
     const [top, setTop] = useState(50);
     const [isLoading, setIsLoading] = useState(false)
-    const [open, setOpen] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+    const [open, setOpen] = useState(false)
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
 
 
@@ -52,6 +53,7 @@ const ContentScript = () => {
                     window.location.href = url
                 }
                 else {
+                    setError('Please state your command clearer.')
                     console.log('Please state your command clearer.')    
                 }
             }
@@ -83,7 +85,12 @@ const ContentScript = () => {
                     systemPrompt: "You are responsible to converting voice commands to browser actions to support accessibility.",
                 });
 
-                const result = await session.prompt(`User said: ${transcript}. Here's you're index of commands: ${SUPPORTED_COMMANDS.join(",")}.`);
+                const result = await session.prompt(`
+                    The user said: ${transcript}. 
+                    Out of the supported commands listed here: ${SUPPORTED_COMMANDS.join(",")}. 
+                    Which action do you think the use is attempting. 
+                    Only pick one action.
+                `);
                 // ai please give me what i need only next time!
                 const command = extractCommandFromText(result);
 
@@ -93,6 +100,18 @@ const ContentScript = () => {
                 // HANDLER FOR COMMANDS
                 if(command === 'NAVIGATE'){
                     extractURL();
+                }
+                else if(command === 'SCROLL_DOWN' || command === 'SCROLL'){
+                    window.scrollBy(0, window.innerHeight);
+                }
+                else if(command === 'SCROLL_UP'){
+                    window.scrollBy(0, -window.innerHeight);
+                }
+                else if(command === 'REFRESH'){
+                    window.location.reload();
+                }
+                else{
+                    setError('Please state your command clearer.') 
                 }
             
             }
@@ -129,8 +148,13 @@ const ContentScript = () => {
                     <DragHandle badgeCount={0} />
                     <Button
                         size='small'
-                        color='info'
-                        sx={{ width: 10, margin: 0, padding: 0, fontSize: 14, textTransform: 'none' }}
+                        sx={{ 
+                            color: 'black',
+                            width: 10, 
+                            margin: 0, 
+                            padding: 0, 
+                            fontSize: 14, 
+                            textTransform: 'none' }}
                         onClick={(event) => {
                             setOpen(!open)
                             if (open) {
@@ -140,7 +164,7 @@ const ContentScript = () => {
                                 setAnchorEl(event.currentTarget)
                             }
                         }}>
-                        {open ? 'Hide' : 'View'}
+                        {open ? 'HIDE' : 'VIEW'}
                     </Button>
                 </div>
             </DndContext>
@@ -170,6 +194,7 @@ const ContentScript = () => {
                                 onClick={SpeechRecognition.stopListening}>Stop</Button>
                             <Button onClick={resetTranscript}>Reset</Button>
                             <p>Text: {transcript}</p>
+                            {error && <p>error: {error}</p>}
                         </div>
                     )}
                 </Box>

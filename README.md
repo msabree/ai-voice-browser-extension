@@ -1,6 +1,6 @@
 # AI Voice Browser - Chrome Extension
 
-The **AI Voice Browser** is a Chrome extension that uses voice recognition and Google's built-in AI to enhance web browsing. Designed with accessibility in mind, it allows users to navigate websites, manage cookies, and interact with content entirely through voice commands.
+The **AI Voice Browser** is a Chrome extension that uses voice recognition and Google's built-in AI to enhance web browsing. Designed with accessibility in mind, it allows users to navigate websites and interact with content entirely through voice commands.
 
 ## Table of Contents
 
@@ -23,7 +23,7 @@ To test the extension locally, follow these steps:
 
 1. Clone the repository:
    ```bash
-   git clone git@github.com:msabree/cookie-jar-extension.git
+   git clone git@github.com:msabree/ai-voice-browser-extension.git
    ```
 
 2. Create a `.env` file in the project root and add your API key:
@@ -46,8 +46,8 @@ To test the extension locally, follow these steps:
 
 1. After loading the extension, visit any website.
 2. Click the extension icon that appears on the right side of the page.
-3. Gemini AI will analyze the cookies on the site and suggest cookies that might be invasive.
-4. Delete unnecessary cookies with a single click.
+3. Click the START Button to start recording.
+4. Say any navigate command.
 
 ## Contributing
 
