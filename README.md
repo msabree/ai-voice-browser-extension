@@ -26,18 +26,13 @@ To test the extension locally, follow these steps:
    git clone git@github.com:msabree/ai-voice-browser-extension.git
    ```
 
-2. Create a `.env` file in the project root and add your API key:
-   ```
-   REACT_APP_AI_API_KEY=<YOUR API KEY HERE>
-   ```
-
-3. Install dependencies and build the project:
+2. Install dependencies and build the project:
    ```bash
    npm install
    npm run build
    ```
 
-4. Load the unpacked extension into Chrome:
+3. Load the unpacked extension into Chrome:
    - Open Chrome and navigate to `chrome://extensions/`
    - Enable **Developer mode**
    - Click **Load unpacked** and select the `dist` folder in your project
