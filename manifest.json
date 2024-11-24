@@ -1,12 +1,12 @@
 {
     "version": "1.0.0",
     "manifest_version": 3,
-    "name": "Cookie Jar",
-    "description": "Use Google Gemini to understand what cookies are being set on your machine and take action to remove them.",
+    "name": "AI Voice Browser",
+    "description": "Use Google Built in AI and Voice recognition to browse the web.",
     "key": "mnjmggopdpjlglelgmakhjdncipdfjon",
     "action": {
         "default_popup": "js/index.html",
-        "default_title": "Cookie Jar",
+        "default_title": "AI Voice Browser",
         "default_icon": {
             "16": "icons/16x16.png",
             "48": "icons/48x48.png",

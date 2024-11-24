@@ -2,6 +2,7 @@ const path = require("path");
 const Dotenv = require("dotenv-webpack");
 const HTMLPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
+const webpack = require('webpack');
 
 module.exports = {
     entry: {
@@ -12,33 +13,36 @@ module.exports = {
     module: {
         rules: [
             {
-              test: /\.tsx?$/,
-               use: [
-                 {
-                  loader: "ts-loader",
-                   options: {
-                     compilerOptions: { noEmit: false },
-                    }
-                  }],
-               exclude: /node_modules/,
+                test: /\.tsx?$/,
+                use: [
+                    {
+                        loader: "ts-loader",
+                        options: {
+                            compilerOptions: { noEmit: false },
+                        }
+                    }],
+                exclude: /node_modules/,
             },
             {
-              exclude: /node_modules/,
-              test: /\.css$/i,
-               use: [
-                  "style-loader",
-                  "css-loader"
-               ]
+                exclude: /node_modules/,
+                test: /\.css$/i,
+                use: [
+                    "style-loader",
+                    "css-loader"
+                ]
             },
         ],
     },
     plugins: [
         new Dotenv(),
+        new webpack.ProvidePlugin({
+            process: 'process/browser', // Make process globally available
+        }),
         new CopyPlugin({
             patterns: [
-                { 
-                    from: "manifest.json", 
-                    to: "../manifest.json" 
+                {
+                    from: "manifest.json",
+                    to: "../manifest.json"
                 },
                 {
                     from: path.resolve(__dirname, 'public/icons'),
@@ -54,6 +58,7 @@ module.exports = {
             assert: false,
             util: false,
             console: false,
+            process: require.resolve('process/browser'),
         },
     },
     output: {

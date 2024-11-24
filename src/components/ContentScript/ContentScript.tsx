@@ -1,138 +1,63 @@
 import React, { useState, useEffect } from 'react';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import 'regenerator-runtime/runtime';
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { extractCommandFromText, extractURLFromText } from '../../utils/aiTweaker';
 import {
     restrictToWindowEdges, restrictToVerticalAxis,
 } from '@dnd-kit/modifiers';
 import Popover from '@mui/material/Popover/Popover';
-import Button from '@mui/material/Button/Button';
 import DragHandle from '../DragHandle/DragHandle';
-import CookiesTable, { Cookie } from '../CookiesTable/CookiesTable';
+import { Box, Button } from '@mui/material';
+import { SUPPORTED_COMMANDS } from '../../constants';
 import "./styles.css";
-import { Box, Tabs, Tab, CircularProgress } from '@mui/material';
-import PrivacySummary from '../PrivacySummarizer/PrivacySummarizer';
-
-interface TabPanelProps {
-    children?: React.ReactNode;
-    index: number;
-    value: number;
-}
 
 // THIS GETS INJECT INTO THE PAGE ITSELF
 const ContentScript = () => {
-    const [tabIndex, setTabIndex] = useState(0);
     const [top, setTop] = useState(50);
     const [isLoading, setIsLoading] = useState(false)
-    const [open, setOpen] = useState(false)
+    const [open, setOpen] = useState(true)
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
-    const [aiCookiesJson, setAiCookiesJson] = useState<Cookie[] | null>(null)
-    const [summaryError, setSummaryError] = useState('')
-    const [summary, setSummary] = useState('')
+
+
+    const {
+        transcript,
+        listening,
+        resetTranscript,
+        browserSupportsSpeechRecognition
+    } = useSpeechRecognition();
 
     const handleDragEnd = (evt: DragEndEvent) => {
         setTop(top + evt.delta.y);
     }
 
-    const getDomain = () => {
-        try {
-            return `${window.location.hostname.split("www")[1]}`
-        } catch (e) {
-            return `.${window.location.hostname}`
-        }
-    }
+    const extractURL = async () => {
+        const ai = (window as any).ai as AI;
+        if (ai.languageModel) {
+            const capabilities = (await ai.summarizer.capabilities()).available;
+            if (capabilities === 'readily') {
+                console.log('extracting URL')
+                const session = await ai.languageModel.create({
+                    systemPrompt: "You are responsible to getting full URLs from voice commands.",
+                });
 
-    const isPrivacyOrPolicyPage = (): boolean => {
-        const regex = /(?:privacy|policy|legal|terms|agreement|cookies?|gdpr?|security)(?:[\w/-]*)(?:\.html?)?$/i;
-        const url = window.location.pathname.toLowerCase(); // Check only the path part of the URL
-        return regex.test(url);
-    };
+                const result = await session.prompt(`User said: ${transcript}. What is the fully qualified https URL they'd like to navigate to?`);
+                const url = extractURLFromText(result);
+                console.log(result, "<-- result")
+                console.log(url, "<-- url")
 
-    const getBadgeCount = () => {
-        return (aiCookiesJson ?? [])?.filter((cookie) => cookie.should_delete).length
-    }
-
-    const deleteCookie = (name: string): void => {
-        // Set the cookie with the same name and a past expiration date to delete it (domains MUST match)
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${getDomain()}`;
-    }
-
-    const analyzeCookies = () => {
-        if (document.cookie.trim() !== '') {
-            setIsLoading(true)
-            const genAI = new GoogleGenerativeAI(process.env.REACT_APP_AI_API_KEY ?? '');
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-            const prompt = `Analyze the following cookies from a website. 
-            Identify any potentially invasive cookies and return the data 
-            in a JSON format with these properties: cookie_name (name of the cookie), 
-            cookie_value (value of the cookie), message (explanation of its purpose), 
-            should_delete (boolean indicating if the user should consider deleting it), 
-            category (type of cookie, e.g., tracking, session), expiration 
-            (expiration date/time of the cookie), and origin (source of the cookie, 
-            e.g., first-party, third-party). Cookies data: ${document.cookie}. I need to parse this 
-            so please return valid JSON only and nothing else.`
-
-            model.generateContent(prompt).then((result) => {
-                setIsLoading(false)
-                const rawJsonString = result.response.text();
-                // this format is frustrating. Gemini adds extra text that i do not want
-                const firstPart = rawJsonString.split("```json")[1]
-                const jsonStringOnly = firstPart.split("```")[0]
-                let jsonCookieData = null
-                try {
-                    jsonCookieData = JSON.parse(jsonStringOnly)
-                }
-                catch (e) {
-                    console.log(e)
-                }
-                if (Array.isArray(jsonCookieData)) {
-                    setAiCookiesJson(jsonCookieData)
+                // NAVIGATE !!
+                if(url){
+                    window.location.href = url
                 }
                 else {
-                    setAiCookiesJson(Object.values(jsonCookieData))
-                }
-            }).catch((err) => {
-                setIsLoading(false)
-                console.log(err)
-            })
-        }
-    }
-
-    // use the Google built in ai to summarize the job posting
-    const summarizePrivacyPolicy = async () => {
-        const ai = (window as any).ai;
-        setSummaryError('')
-        if ('ai' in window && 'summarizer' in ai) {
-            const capabilities = (await ai.summarizer.capabilities()).available;
-            console.log(capabilities)
-            if (capabilities === 'no') {
-                console.log('AI Summarizer not supported in this browser.')
-                setSummaryError("AI Sumamrizer not supported in  this browser.")
-                return
-            }
-            else if (capabilities === 'readily') {
-                const options = {
-                    sharedContext: `Summarize this privacy policy: ${document.body.innerText.slice(0, 30000)}`,
-                    type: 'key-points',
-                    format: 'markdown',
-                    length: 'medium',
-                };
-
-                try {
-                    const summarizer = await ai.summarizer.create(options)
-                    const summary = await summarizer.summarize(`Summarize it briefly and make it look pretty.`)
-
-                    console.log(summary)
-                    setSummary(summary)
-                }
-                catch (e) {
-                    console.log(e)
+                    console.log('Please state your command clearer.')    
                 }
             }
             else if (capabilities === 'after-download') {
-                console.log('AI Summarizer is ready to use after downloading the model.')
-                setSummaryError("AI Sumamrizer needs to download first. Try again shortly...")
-                await ai.summarizer.create({
+                console.log('AI Prompt API is ready to use after downloading the model.')
+                await ai.languageModel.create({
                     monitor(m: any) {
                         m.addEventListener('downloadprogress', (e: any) => {
                             console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
@@ -142,43 +67,69 @@ const ContentScript = () => {
                 return;
             }
             else {
-                console.log('AI Summarizer not supported in this browser.')
-                setSummaryError("AI Sumamrizer not supported in  this browser.")
-                return
+                console.log('AI Prompt API not available to use. please check your flags in this browser.')
             }
         } else {
-            console.log('AI Summarizer not supported in this browser.')
-            setSummaryError("AI Sumamrizer not supported in  this browser.")
+            console.log('AI Prompt API not supported in this browser.')
+        }    
+    }
+
+    const extractCommand = async () => {
+        const ai = (window as any).ai as AI;
+        if (ai.languageModel) {
+            const capabilities = (await ai.summarizer.capabilities()).available;
+            if (capabilities === 'readily') {
+                const session = await ai.languageModel.create({
+                    systemPrompt: "You are responsible to converting voice commands to browser actions to support accessibility.",
+                });
+
+                const result = await session.prompt(`User said: ${transcript}. Here's you're index of commands: ${SUPPORTED_COMMANDS.join(",")}.`);
+                // ai please give me what i need only next time!
+                const command = extractCommandFromText(result);
+
+                console.log(result, "<-- result")
+                console.log(command, "<-- command")
+
+                // HANDLER FOR COMMANDS
+                if(command === 'NAVIGATE'){
+                    extractURL();
+                }
+            
+            }
+            else if (capabilities === 'after-download') {
+                console.log('AI Prompt API is ready to use after downloading the model.')
+                await ai.languageModel.create({
+                    monitor(m: any) {
+                        m.addEventListener('downloadprogress', (e: any) => {
+                            console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
+                        });
+                    }
+                });
+                return;
+            }
+            else {
+                console.log('AI Prompt API not available to use. please check your flags in this browser.')
+            }
+        } else {
+            console.log('AI Prompt API not supported in this browser.')
         }
     }
 
+
     useEffect(() => {
-        analyzeCookies()
-    }, [])
-
-    const CustomTabPanel = (props: TabPanelProps) => {
-        const { children, value, index, ...other } = props;
-
-        return (
-            <div
-                role="tabpanel"
-                hidden={value !== index}
-                id={`simple-tabpanel-${index}`}
-                aria-labelledby={`simple-tab-${index}`}
-                {...other}
-            >
-                {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-            </div>
-        );
-    }
+        if(!listening && transcript.trim() !== ''){
+            extractCommand();
+        }
+    }, [listening, transcript])
 
     return (
         <div>
             <DndContext onDragEnd={handleDragEnd} modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}>
                 <div className='draggable-container' style={{ top }}>
-                    <DragHandle badgeCount={getBadgeCount()} />
+                    <DragHandle badgeCount={0} />
                     <Button
                         size='small'
+                        color='info'
                         sx={{ width: 10, margin: 0, padding: 0, fontSize: 14, textTransform: 'none' }}
                         onClick={(event) => {
                             setOpen(!open)
@@ -206,53 +157,21 @@ const ContentScript = () => {
                     horizontal: 'left',
                 }}
             >
-                <Box sx={{ width: 700 }}>
-                    <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                        <Tabs value={tabIndex} onChange={(_evt: any, index: number) => setTabIndex(index)} aria-label="Cookie Jar Tabs">
-                            <Tab label="AI Cookie Manager" sx={{ textTransform: 'none', fontSize: 16 }} />
-                            <Tab label="AI Privacy Summary" sx={{ textTransform: 'none', fontSize: 16 }} />
-                        </Tabs>
-                    </Box>
-                    <CustomTabPanel value={tabIndex} index={0}>
-                        <Button
-                            sx={{ textTransform: 'none', marginBottom: 3 }}
-                            color='warning' variant='outlined'
-                            disabled={isLoading || (aiCookiesJson ?? []).filter((cookie) => cookie.should_delete).length === 0}
-                            onClick={() => {
-                                (aiCookiesJson ?? []).forEach((cookie) => {
-                                    if (cookie.should_delete) {
-                                        deleteCookie(cookie.cookie_name)
-                                    }
-                                })
-                                analyzeCookies()
-                            }}>Delete All Recommended</Button>
-                        {isLoading && <CircularProgress />}
-                        <div style={{ fontSize: '12px' }}>
-                            <span style={{ fontWeight: 'bold' }}>Disclaimer:</span> Some cookies may reappear after deletion. This could indicate that they are
-                            essential for the proper operation of the website or application. In some cases,
-                            the AI may mistakenly flag necessary cookies as invasive, leading to their
-                            unintended removal. Please ensure that your browser settings and cookies are
-                            reviewed if you experience any issues after deletion.
+                <Box sx={{ width: 300 }}>
+                    {!browserSupportsSpeechRecognition && <span>Browser doesn't support speech recognition.</span>}
+                    {browserSupportsSpeechRecognition && (
+                        <div>
+                            <p>Microphone: {listening ? 'on' : 'off'}</p>
+                            <Button
+                                disabled={listening}
+                                onClick={SpeechRecognition.startListening as any}>Start</Button>
+                            <Button
+                                disabled={!listening}
+                                onClick={SpeechRecognition.stopListening}>Stop</Button>
+                            <Button onClick={resetTranscript}>Reset</Button>
+                            <p>Text: {transcript}</p>
                         </div>
-                        <br></br>
-                        <CookiesTable
-                            isLoading={isLoading}
-                            data={aiCookiesJson ?? []} onDelete={(cookie) => {
-                                deleteCookie(cookie)
-                                analyzeCookies()
-                            }} />
-                    </CustomTabPanel>
-                    <CustomTabPanel value={tabIndex} index={1}>
-                        <PrivacySummary summary={summary} errorMessage={summaryError} summarize={() => {
-                            if (isPrivacyOrPolicyPage()) {
-                                setSummaryError('')
-                                summarizePrivacyPolicy()
-                            }
-                            else {
-                                setSummaryError('Privacy policy or terms page not detected. Please visit a valid privacy page and try again.')
-                            }
-                        }} />
-                    </CustomTabPanel>
+                    )}
                 </Box>
             </Popover>
         </div>

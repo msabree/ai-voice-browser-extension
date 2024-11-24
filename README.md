@@ -1,6 +1,6 @@
-# Cookie Jar - Chrome Extension
+# AI Voice Browser - Chrome Extension
 
-The **Cookie Jar** is a browser extension that integrates the Google Gemini AI engine to analyze and manage cookies from websites. It allows users to easily delete unnecessary or invasive cookies, improving their browsing experience. This project is open-source and aims to help users manage cookies efficiently.
+The **AI Voice Browser** is a Chrome extension that uses voice recognition and Google's built-in AI to enhance web browsing. Designed with accessibility in mind, it allows users to navigate websites, manage cookies, and interact with content entirely through voice commands.
 
 ## Table of Contents
 
@@ -13,8 +13,8 @@ The **Cookie Jar** is a browser extension that integrates the Google Gemini AI e
 
 ## Features
 
-- Integrates with Google Gemini AI to analyze website cookies.
-- Enables users to delete unnecessary or invasive cookies easily.
+- Integrates with Google's Built in AI to convert the voice text into web commands.
+- Supports NAVIGATE command currently with more comming in the future.
 - Open-source project with contributions welcome.
 
 ## Installation

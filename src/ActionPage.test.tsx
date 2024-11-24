@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import App from './App';
+import ActionPage from './ActionPage';
 
 test('renders text with extension name', () => {
-  render(<App />);
-  const cookieJarText = screen.getByText(/Cookie Jar/i);
+  render(<ActionPage />);
+  const cookieJarText = screen.getByText(/Voice Browser/i);
   expect(cookieJarText).toBeInTheDocument();
 });
