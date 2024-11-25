@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import 'regenerator-runtime/runtime';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { extractCommandFromText, findMatchingLink, extractURLFromText } from '../../utils/aiTweaker';
 import { getAllSearchInputs, getClickableLinks, getFirstVideoInView } from '../../utils/pageHelper';
 import {
@@ -83,6 +82,7 @@ const ContentScript = () => {
                 Only pick one action.
                 All input/output will use the ENGLISH language.
             `);
+
             // ai please give me what i need only next time!
             const command = extractCommandFromText(result);
 
@@ -93,7 +93,7 @@ const ContentScript = () => {
             if (command === 'NAVIGATE TO URL') {
                 extractURL();
             }
-            else if (command === 'SCROLL DOWN' || command === 'SCROLL') {
+            else if (command === 'SCROLL DOWN') {
                 window.scrollBy(0, window.innerHeight);
             }
             else if (command === 'SCROLL UP') {

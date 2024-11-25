@@ -1,7 +1,6 @@
 export const SUPPORTED_COMMANDS = [
     'NAVIGATE TO URL', 
     'SEARCH CURRENT PAGE',
-    'SCROLL',
     'SCROLL UP',
     'SCROLL DOWN', 
     'REFRESH PAGE', 
