@@ -33,3 +33,13 @@ export const extractURLFromText = (text: string) => {
     // Return the first matched URL, or null if no match is found
     return match ? match[0] : null;
 }
+
+// this is getting painful... 
+// Extract the target content from the text **target content**
+export const extractTargetContent = (text: string) => {
+    const regex = /\*\*(.*?)\*\*/;  // Regular expression to match content inside ** **
+    const match = regex.exec(text);  // Only execute once for the first match
+    
+    // Return the matched content (or null if no match)
+    return match ? match[1].trim() : null;
+  }

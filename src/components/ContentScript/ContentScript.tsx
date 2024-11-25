@@ -3,8 +3,8 @@ import 'regenerator-runtime/runtime';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { extractCommandFromText, extractURLFromText } from '../../utils/aiTweaker';
-import { getAllSearchInputs } from '../../utils/pageHelper';
+import { extractCommandFromText, extractTargetContent, extractURLFromText } from '../../utils/aiTweaker';
+import { getAllSearchInputs, getClickableLinks } from '../../utils/pageHelper';
 import {
     restrictToWindowEdges, restrictToVerticalAxis,
 } from '@dnd-kit/modifiers';
@@ -50,6 +50,30 @@ const ContentScript = () => {
         }
     }
 
+    const matchLinkToClick = async () => {
+        const clickableLinks = getClickableLinks();
+        const clickableLinksText = clickableLinks.map(link => link.text);
+        console.log(clickableLinks)
+        const session = await getAISession("You will take a user voice command and match it against a set of text values to see which one the user wants to access.") as AILanguageModel;
+        const result = await session.prompt(`User said: ${transcript}. Which of the following text values matches best ${clickableLinksText}?`);
+        const targetContent = extractTargetContent(result);
+
+        // Find the link that matches the target content
+        const matchedLink = clickableLinks.find(link => link.text.toLocaleLowerCase() === (targetContent ?? '').toLocaleLowerCase());
+
+        console.log(result, "<-- result")
+        console.log(matchedLink, "<-- url")
+
+        // GO TO IT
+        if (matchedLink) {
+            window.location.href = matchedLink.url
+        }
+        else {
+            setError('Please state your command clearer.')
+            console.log('Please state your command clearer.')
+        }
+    }
+
     const extractCommand = async () => {
         setIsLoading(true)
         const session = await getAISession("You are responsible to converting voice commands to browser actions to support accessibility.") as AILanguageModel;
@@ -69,19 +93,22 @@ const ContentScript = () => {
             console.log(command, "<-- command")
 
             // HANDLER FOR COMMANDS
-            if (command === 'NAVIGATE') {
+            if (command === 'NAVIGATE TO URL') {
                 extractURL();
             }
-            else if (command === 'SCROLL_DOWN' || command === 'SCROLL') {
+            else if (command === 'SCROLL DOWN' || command === 'SCROLL') {
                 window.scrollBy(0, window.innerHeight);
             }
-            else if (command === 'SCROLL_UP') {
+            else if (command === 'SCROLL UP') {
                 window.scrollBy(0, -window.innerHeight);
             }
-            else if (command === 'REFRESH') {
+            else if (command === 'CLICK LINK') {
+                matchLinkToClick();
+            }
+            else if (command === 'REFRESH PAGE') {
                 window.location.reload();
             }
-            else if (command === 'SEARCH') {
+            else if (command === 'SEARCH CURRENT PAGE') {
                 const searchInputIds = getAllSearchInputs();
                 const searchInputID = searchInputIds[0];
                 // Do the search 

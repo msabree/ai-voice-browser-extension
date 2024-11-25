@@ -1,10 +1,11 @@
 export const SUPPORTED_COMMANDS = [
-    'NAVIGATE', 
-    'SEARCH',
-    'SCROLL', // will use this as down
-    'SCROLL_UP',
-    'SCROLL_DOWN', 
-    'REFRESH', 
-    'PLAY_VIDEO', 
-    'STOP_VIDEO'
-]
+    'NAVIGATE TO URL', 
+    'SEARCH CURRENT PAGE',
+    'SCROLL',
+    'SCROLL UP',
+    'SCROLL DOWN', 
+    'REFRESH PAGE', 
+    'CLICK LINK',
+] as const;
+
+export type SUPPORTED_COMMANDS_TYPE = typeof SUPPORTED_COMMANDS[number];

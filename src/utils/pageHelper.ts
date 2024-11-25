@@ -29,3 +29,28 @@ export const getAllSearchInputs = () => {
 
     return searchFields
 }
+
+export const getClickableLinks = () => {
+    const links = document.querySelectorAll('a');
+    
+    // Create an array to store the link details
+    const clickableLinks:{
+        text: string,
+        url: string
+    }[] = [];
+    
+    links.forEach(link => {
+      const href = link.getAttribute('href');
+      
+      // Check if the href is valid (non-empty and not just '#')
+      if (href && href !== '#') {
+        // Create a JSON object with the href and the link's text content
+        clickableLinks.push({
+          text: link.textContent?.trim() ?? '',
+          url: href
+        });
+      }
+    });
+    
+    return clickableLinks.filter(link => link.text && link.url);
+  }
