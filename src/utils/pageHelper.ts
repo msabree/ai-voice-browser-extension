@@ -32,37 +32,37 @@ export const getAllSearchInputs = () => {
 
 export const getClickableLinks = () => {
     const links = document.querySelectorAll('a');
-    
+
     // Create an array to store the link details
-    const clickableLinks:{
+    const clickableLinks: {
         text: string,
         url: string
     }[] = [];
-    
+
     links.forEach(link => {
-      const href = link.getAttribute('href');
-      
-      // Check if the href is valid (non-empty and not just '#')
-      if (href && href !== '#') {
-        // Create a JSON object with the href and the link's text content
-        clickableLinks.push({
-          text: link.textContent?.trim() ?? '',
-          url: href
-        });
-      }
+        const href = link.getAttribute('href');
+
+        // Check if the href is valid (non-empty and not just '#')
+        if (href && href !== '#') {
+            // Create a JSON object with the href and the link's text content
+            clickableLinks.push({
+                text: link.textContent?.trim() ?? '',
+                url: href
+            });
+        }
     });
-    
+
     return clickableLinks.filter(link => link.text && link.url);
-  }
+}
 
 export const getFirstVideoInView = () => {
     // Get all video elements on the page
     const videos = document.querySelectorAll('video');
-    
+
     // Loop through each video element
     for (let i = 0; i < videos.length; i++) {
         const video = videos[i];
-        
+
         // Get the position of the video relative to the viewport
         const rect = video.getBoundingClientRect();
 
@@ -73,10 +73,10 @@ export const getFirstVideoInView = () => {
             rect.bottom <= window.innerHeight &&  // Video is not below the viewport
             rect.right <= window.innerWidth    // Video is not off to the right of the viewport
         ) {
-            return video;  // Return the first video that is in view
+            return video as HTMLVideoElement;;  // Return the first video that is in view
         }
     }
-    
+
     // Return null if no video is in view
     return null;
 }

@@ -48,7 +48,8 @@ To test the extension locally, follow these steps:
 1. After loading the extension, visit any website.
 2. Click the extension icon that appears on the right side of the page.
 3. Click the START Button to start recording.
-4. Say any navigate command.
+4. Speak any of the supported commands using natural langauge.
+5. **This AI is EXPERIMENTAL and may require multiple attempts.**
 
 ## Contributing
 

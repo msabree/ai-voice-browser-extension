@@ -4,7 +4,7 @@ import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognitio
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { extractCommandFromText, extractTargetContent, extractURLFromText } from '../../utils/aiTweaker';
-import { getAllSearchInputs, getClickableLinks } from '../../utils/pageHelper';
+import { getAllSearchInputs, getClickableLinks, getFirstVideoInView } from '../../utils/pageHelper';
 import {
     restrictToWindowEdges, restrictToVerticalAxis,
 } from '@dnd-kit/modifiers';
@@ -53,7 +53,6 @@ const ContentScript = () => {
     const matchLinkToClick = async () => {
         const clickableLinks = getClickableLinks();
         const clickableLinksText = clickableLinks.map(link => link.text);
-        console.log(clickableLinks)
         const session = await getAISession("You will take a user voice command and match it against a set of text values to see which one the user wants to access.") as AILanguageModel;
         const result = await session.prompt(`User said: ${transcript}. Which of the following text values matches best ${clickableLinksText}?`);
         const targetContent = extractTargetContent(result);
@@ -108,6 +107,42 @@ const ContentScript = () => {
             else if (command === 'REFRESH PAGE') {
                 window.location.reload();
             }
+            else if(command === 'UNMUTE VIDEO'){
+                const videoInView = getFirstVideoInView();
+                if (videoInView) {
+                    videoInView.muted = false;
+                }
+                else {
+                    setError('No video found on the page.')
+                }
+            }
+            else if(command === 'MUTE VIDEO'){
+                const videoInView = getFirstVideoInView();
+                if (videoInView) {
+                    videoInView.muted = true;
+                }
+                else {
+                    setError('No video found on the page.')
+                }
+            }
+            else if(command === 'PLAY VIDEO'){
+                const videoInView = getFirstVideoInView();
+                if (videoInView) {
+                    videoInView.play();
+                }
+                else {
+                    setError('No video found on the page.')
+                }
+            }
+            else if(command === 'PAUSE VIDEO'){
+                const videoInView = getFirstVideoInView();
+                if (videoInView) {
+                    videoInView.pause();
+                }
+                else {
+                    setError('No video found on the page.')
+                }
+            }
             else if (command === 'SEARCH CURRENT PAGE') {
                 const searchInputIds = getAllSearchInputs();
                 const searchInputID = searchInputIds[0];
@@ -117,8 +152,11 @@ const ContentScript = () => {
                     // Find the search input field by its ID
                     const searchInput = document.getElementById(searchInputIds[0]) ?? document.getElementsByClassName(searchInputIds[0])[0];
                     if (searchInput) {
-                        // Set a value for the search input (optional)
+                        
+                        // SIMULATE TYPING THE SEARCH
+                        const event = new Event('input', { bubbles: true });
                         (searchInput as HTMLInputElement).value = transcript.toLocaleLowerCase().replace("search for", "").trim();
+                        searchInput.dispatchEvent(event);
 
                         // Simulate the "Enter" key press
                         const enterEvent = new KeyboardEvent('keydown', {
