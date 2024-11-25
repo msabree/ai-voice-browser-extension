@@ -107,7 +107,7 @@ const ContentScript = () => {
             else if (command === 'REFRESH PAGE') {
                 window.location.reload();
             }
-            else if(command === 'UNMUTE VIDEO'){
+            else if (command === 'UNMUTE VIDEO') {
                 const videoInView = getFirstVideoInView();
                 if (videoInView) {
                     videoInView.muted = false;
@@ -116,7 +116,7 @@ const ContentScript = () => {
                     setError('No video found on the page.')
                 }
             }
-            else if(command === 'MUTE VIDEO'){
+            else if (command === 'MUTE VIDEO') {
                 const videoInView = getFirstVideoInView();
                 if (videoInView) {
                     videoInView.muted = true;
@@ -125,7 +125,7 @@ const ContentScript = () => {
                     setError('No video found on the page.')
                 }
             }
-            else if(command === 'PLAY VIDEO'){
+            else if (command === 'PLAY VIDEO') {
                 const videoInView = getFirstVideoInView();
                 if (videoInView) {
                     videoInView.play();
@@ -134,7 +134,7 @@ const ContentScript = () => {
                     setError('No video found on the page.')
                 }
             }
-            else if(command === 'PAUSE VIDEO'){
+            else if (command === 'PAUSE VIDEO') {
                 const videoInView = getFirstVideoInView();
                 if (videoInView) {
                     videoInView.pause();
@@ -152,7 +152,7 @@ const ContentScript = () => {
                     // Find the search input field by its ID
                     const searchInput = document.getElementById(searchInputIds[0]) ?? document.getElementsByClassName(searchInputIds[0])[0];
                     if (searchInput) {
-                        
+
                         // SIMULATE TYPING THE SEARCH
                         const event = new Event('input', { bubbles: true });
                         (searchInput as HTMLInputElement).value = transcript.toLocaleLowerCase().replace("search for", "").trim();
@@ -160,15 +160,15 @@ const ContentScript = () => {
 
                         // Simulate the "Enter" key press
                         const enterEvent = new KeyboardEvent('keydown', {
-                            key: 'Enter',          
-                            keyCode: 13,           
-                            code: 'Enter',         
-                            which: 13,             
-                            bubbles: true,         
+                            key: 'Enter',
+                            keyCode: 13,
+                            code: 'Enter',
+                            which: 13,
+                            bubbles: true,
                         });
 
                         // Dispatch the event to the search input element
-                        (searchInput as HTMLInputElement).focus();                        
+                        (searchInput as HTMLInputElement).focus();
                         setTimeout(() => {
                             searchInput.dispatchEvent(enterEvent);
                         }, 2000)
@@ -287,20 +287,29 @@ const ContentScript = () => {
                     horizontal: 'left',
                 }}
             >
-                <Box sx={{ width: 300 }}>
+                <Box sx={{ width: 300, height: 200, fontSize: "18px" }}>
                     {!browserSupportsSpeechRecognition && <span>Browser doesn't support speech recognition.</span>}
                     {browserSupportsSpeechRecognition && (
-                        <div>
+                        <div className='ai-voice-browser-main'>
                             <p>Microphone: {listening ? 'on' : 'off'}</p>
-                            <Button
-                                disabled={listening}
-                                onClick={SpeechRecognition.startListening as any}>Start</Button>
-                            <Button
-                                disabled={!listening}
-                                onClick={SpeechRecognition.stopListening}>Stop</Button>
-                            <Button onClick={resetTranscript}>Reset</Button>
+                            <div className='ai-voice-browser-button-bar'>
+                                <Button
+                                    size='large'
+                                    variant='outlined'
+                                    disabled={listening}
+                                    onClick={SpeechRecognition.startListening as any}>Start</Button>
+                                <Button
+                                    size='large'
+                                    variant='outlined'
+                                    disabled={!listening}
+                                    onClick={SpeechRecognition.stopListening}>Stop</Button>
+                                <Button
+                                    size='large'
+                                    variant='outlined'
+                                    onClick={resetTranscript}>Reset</Button>
+                            </div>
                             {isLoading && <CircularProgress size="18px" />}
-                            <p>Text: {transcript}</p>
+                            <p className='ai-voice-browser-transcript'>Text: {transcript}</p>
                             {error && <p>error: {error}</p>}
                         </div>
                     )}
