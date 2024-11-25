@@ -3,7 +3,7 @@ import 'regenerator-runtime/runtime';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { extractCommandFromText, extractTargetContent, extractURLFromText } from '../../utils/aiTweaker';
+import { extractCommandFromText, findMatchingLink, extractURLFromText } from '../../utils/aiTweaker';
 import { getAllSearchInputs, getClickableLinks, getFirstVideoInView } from '../../utils/pageHelper';
 import {
     restrictToWindowEdges, restrictToVerticalAxis,
@@ -55,17 +55,15 @@ const ContentScript = () => {
         const clickableLinksText = clickableLinks.map(link => link.text);
         const session = await getAISession("You will take a user voice command and match it against a set of text values to see which one the user wants to access.") as AILanguageModel;
         const result = await session.prompt(`User said: ${transcript}. Which of the following text values matches best ${clickableLinksText}?`);
-        const targetContent = extractTargetContent(result);
+        const matchingLink = findMatchingLink(result, clickableLinks);
 
-        // Find the link that matches the target content
-        const matchedLink = clickableLinks.find(link => link.text.toLocaleLowerCase() === (targetContent ?? '').toLocaleLowerCase());
 
         console.log(result, "<-- result")
-        console.log(matchedLink, "<-- url")
+        console.log(matchingLink, "<-- url")
 
         // GO TO IT
-        if (matchedLink) {
-            window.location.href = matchedLink.url
+        if (matchingLink) {
+            window.location.href = matchingLink.url
         }
         else {
             setError('Please state your command clearer.')
@@ -246,12 +244,23 @@ const ContentScript = () => {
         }
     }, [error])
 
+    useEffect(() => {
+        const dragHandle = document.getElementById('ai-drag-handle-button');
+
+        // click the drag handle to open the popover when page loads
+        if (dragHandle) {
+            dragHandle.click();
+            SpeechRecognition.startListening();
+        }
+    }, [])
+
     return (
         <div>
             <DndContext onDragEnd={handleDragEnd} modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}>
                 <div className='draggable-container' style={{ top }}>
                     <DragHandle badgeCount={0} />
                     <Button
+                        id='ai-drag-handle-button'
                         size='small'
                         sx={{
                             color: 'black',
@@ -267,6 +276,7 @@ const ContentScript = () => {
                                 setAnchorEl(null)
                             }
                             else {
+                                SpeechRecognition.startListening();
                                 setAnchorEl(event.currentTarget)
                             }
                         }}>
@@ -287,11 +297,11 @@ const ContentScript = () => {
                     horizontal: 'left',
                 }}
             >
-                <Box sx={{ width: 300, height: 200, fontSize: "18px" }}>
+                <Box sx={{ width: 300, height: 250, fontSize: "18px" }}>
                     {!browserSupportsSpeechRecognition && <span>Browser doesn't support speech recognition.</span>}
                     {browserSupportsSpeechRecognition && (
                         <div className='ai-voice-browser-main'>
-                            <p>Microphone: {listening ? 'on' : 'off'}</p>
+                            <p>Microphone: {listening ? 'ON' : 'OFF'}</p>
                             <div className='ai-voice-browser-button-bar'>
                                 <Button
                                     size='large'

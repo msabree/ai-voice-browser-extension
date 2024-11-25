@@ -1,8 +1,8 @@
 import { SUPPORTED_COMMANDS } from "../constants";
 
 // The built in AI model does not like it when you instruct it on how to return data.
-// So... insead of it JUST returning a command from the array it returns a bunch of garbage text as well.
-// So.. here's a helper function to extract the command from the garbage text.
+// So... insead of it JUST returning a command from the array it returns a bunch of markdown text as well.
+// So.. here's a helper function to extract the command from the markdown
 export const extractCommandFromText = (text: string) => {
     // Loop through each command in the order they appear in SUPPORTED_COMMANDS
     for (const command of SUPPORTED_COMMANDS) {
@@ -19,8 +19,8 @@ export const extractCommandFromText = (text: string) => {
     return null;
 }
 
-// Again, instead of getting what i ask for i get more garbage text.
-// Extract out the fully qualified URL from the garbage text.
+// Again, instead of getting what i ask for i get more markdown.
+// Extract out the fully qualified URL from the markdown.
 export const extractURLFromText = (text: string) => {
 
     // Google AI loves markdown stars, so we need to remove them.
@@ -36,10 +36,18 @@ export const extractURLFromText = (text: string) => {
 
 // this is getting painful... 
 // Extract the target content from the text **target content**
-export const extractTargetContent = (text: string) => {
-    const regex = /\*\*(.*?)\*\*/;  // Regular expression to match content inside ** **
-    const match = regex.exec(text);  // Only execute once for the first match
+export const findMatchingLink = (text: string, clickableLinks: {text:string, url: string}[]) => {
+    // Loop through each clickable link
+    for (const link of clickableLinks) {
+        // Create a case-insensitive regular expression for the link text
+        const linkTextRegex = new RegExp(`\\b${link.text}\\b`, 'i');
+        
+        // Check if the link text is found in the text
+        if (linkTextRegex.test(text)) {
+            return link;  // Return the first link found
+        }
+    }
     
-    // Return the matched content (or null if no match)
-    return match ? match[1].trim() : null;
-  }
+    // Return null if no link is found
+    return null;
+}
