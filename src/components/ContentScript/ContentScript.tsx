@@ -4,12 +4,13 @@ import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognitio
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { extractCommandFromText, extractURLFromText } from '../../utils/aiTweaker';
+import { getAllSearchInputs } from '../../utils/pageHelper';
 import {
     restrictToWindowEdges, restrictToVerticalAxis,
 } from '@dnd-kit/modifiers';
 import Popover from '@mui/material/Popover/Popover';
 import DragHandle from '../DragHandle/DragHandle';
-import { Box, Button } from '@mui/material';
+import { Box, Button, CircularProgress } from '@mui/material';
 import { SUPPORTED_COMMANDS } from '../../constants';
 import "./styles.css";
 
@@ -20,7 +21,6 @@ const ContentScript = () => {
     const [error, setError] = useState<string | null>(null)
     const [open, setOpen] = useState(false)
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
-
 
     const {
         transcript,
@@ -34,112 +34,152 @@ const ContentScript = () => {
     }
 
     const extractURL = async () => {
-        const ai = (window as any).ai as AI;
-        if (ai.languageModel) {
-            const capabilities = (await ai.summarizer.capabilities()).available;
-            if (capabilities === 'readily') {
-                console.log('extracting URL')
-                const session = await ai.languageModel.create({
-                    systemPrompt: "You are responsible to getting full URLs from voice commands.",
-                });
+        const session = await getAISession("You are responsible to getting full URLs from voice commands.") as AILanguageModel;
+        const result = await session.prompt(`User said: ${transcript}. What is the fully qualified https URL they'd like to navigate to?`);
+        const url = extractURLFromText(result);
+        console.log(result, "<-- result")
+        console.log(url, "<-- url")
 
-                const result = await session.prompt(`User said: ${transcript}. What is the fully qualified https URL they'd like to navigate to?`);
-                const url = extractURLFromText(result);
-                console.log(result, "<-- result")
-                console.log(url, "<-- url")
-
-                // NAVIGATE !!
-                if(url){
-                    window.location.href = url
-                }
-                else {
-                    setError('Please state your command clearer.')
-                    console.log('Please state your command clearer.')    
-                }
-            }
-            else if (capabilities === 'after-download') {
-                console.log('AI Prompt API is ready to use after downloading the model.')
-                await ai.languageModel.create({
-                    monitor(m: any) {
-                        m.addEventListener('downloadprogress', (e: any) => {
-                            console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
-                        });
-                    }
-                });
-                return;
-            }
-            else {
-                console.log('AI Prompt API not available to use. please check your flags in this browser.')
-            }
-        } else {
-            console.log('AI Prompt API not supported in this browser.')
-        }    
+        // NAVIGATE !!
+        if (url) {
+            window.location.href = url
+        }
+        else {
+            setError('Please state your command clearer.')
+            console.log('Please state your command clearer.')
+        }
     }
 
     const extractCommand = async () => {
-        const ai = (window as any).ai as AI;
-        if (ai.languageModel) {
-            const capabilities = (await ai.summarizer.capabilities()).available;
-            if (capabilities === 'readily') {
-                const session = await ai.languageModel.create({
-                    systemPrompt: "You are responsible to converting voice commands to browser actions to support accessibility.",
-                });
+        setIsLoading(true)
+        const session = await getAISession("You are responsible to converting voice commands to browser actions to support accessibility.") as AILanguageModel;
 
-                const result = await session.prompt(`
-                    The user said: ${transcript}. 
-                    Out of the supported commands listed here: ${SUPPORTED_COMMANDS.join(",")}. 
-                    Which action do you think the use is attempting. 
-                    Only pick one action.
-                `);
-                // ai please give me what i need only next time!
-                const command = extractCommandFromText(result);
+        try {
+            const result = await session.prompt(`
+                The user said: ${transcript}. 
+                Out of the supported commands listed here: ${SUPPORTED_COMMANDS.join(",")}. 
+                Which action do you think the use is attempting. 
+                Only pick one action.
+                All input/output will use the ENGLISH language.
+            `);
+            // ai please give me what i need only next time!
+            const command = extractCommandFromText(result);
 
-                console.log(result, "<-- result")
-                console.log(command, "<-- command")
+            console.log(result, "<-- result")
+            console.log(command, "<-- command")
 
-                // HANDLER FOR COMMANDS
-                if(command === 'NAVIGATE'){
-                    extractURL();
-                }
-                else if(command === 'SCROLL_DOWN' || command === 'SCROLL'){
-                    window.scrollBy(0, window.innerHeight);
-                }
-                else if(command === 'SCROLL_UP'){
-                    window.scrollBy(0, -window.innerHeight);
-                }
-                else if(command === 'REFRESH'){
-                    window.location.reload();
-                }
-                else{
-                    setError('Please state your command clearer.') 
-                }
-            
+            // HANDLER FOR COMMANDS
+            if (command === 'NAVIGATE') {
+                extractURL();
             }
-            else if (capabilities === 'after-download') {
-                console.log('AI Prompt API is ready to use after downloading the model.')
-                await ai.languageModel.create({
-                    monitor(m: any) {
-                        m.addEventListener('downloadprogress', (e: any) => {
-                            console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
+            else if (command === 'SCROLL_DOWN' || command === 'SCROLL') {
+                window.scrollBy(0, window.innerHeight);
+            }
+            else if (command === 'SCROLL_UP') {
+                window.scrollBy(0, -window.innerHeight);
+            }
+            else if (command === 'REFRESH') {
+                window.location.reload();
+            }
+            else if (command === 'SEARCH') {
+                const searchInputIds = getAllSearchInputs();
+                const searchInputID = searchInputIds[0];
+                // Do the search 
+                if (searchInputID) {
+                    console.log(searchInputID, "<-- searchInputID")
+                    // Find the search input field by its ID
+                    const searchInput = document.getElementById(searchInputIds[0]) ?? document.getElementsByClassName(searchInputIds[0])[0];
+                    if (searchInput) {
+                        // Set a value for the search input (optional)
+                        (searchInput as HTMLInputElement).value = transcript.toLocaleLowerCase().replace("search for", "").trim();
+
+                        // Simulate the "Enter" key press
+                        const enterEvent = new KeyboardEvent('keydown', {
+                            key: 'Enter',          
+                            keyCode: 13,           
+                            code: 'Enter',         
+                            which: 13,             
+                            bubbles: true,         
                         });
+
+                        // Dispatch the event to the search input element
+                        (searchInput as HTMLInputElement).focus();                        
+                        setTimeout(() => {
+                            searchInput.dispatchEvent(enterEvent);
+                        }, 2000)
                     }
-                });
-                return;
+                }
+                else {
+                    setError('No search input found on the page.')
+                }
             }
             else {
-                console.log('AI Prompt API not available to use. please check your flags in this browser.')
+                setError('Unable to handle your request. Please try again later.')
             }
-        } else {
-            console.log('AI Prompt API not supported in this browser.')
+
+            setIsLoading(false)
         }
+        catch (e: any) {
+            setIsLoading(false)
+            setError(e.message ?? 'Google AI Prompt API failed to return a response.')
+        }
+
+        // Start listening again
+        SpeechRecognition.startListening();
     }
 
+    const getAISession = async (systemPrompt: string) => {
+        return new Promise((resolve, reject) => {
+            const ai = (window as any).ai as AI;
+            if (ai.languageModel) {
+                ai.summarizer.capabilities().then((response: any) => {
+                    const capabilities = response.available;
+                    if (capabilities === 'readily') {
+                        ai.languageModel.create({
+                            systemPrompt,
+                        }).then((session: any) => {
+                            resolve(session)
+                        }).catch((err: any) => {
+                            reject(err)
+                        })
+                    }
+                    else if (capabilities === 'after-download') {
+                        // download the model
+                        ai.languageModel.create({
+                            monitor(m: any) {
+                                m.addEventListener('downloadprogress', (e: any) => {
+                                    console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
+                                });
+                            }
+                        })
+                        // throw error in the meantime
+                        reject(new Error('AI Prompt API is ready to use after downloading the model.'))
+                    }
+                    else {
+                        reject(new Error('AI Prompt API not available to use. please check your flags in this browser.'))
+                    }
+                }).catch((err: any) => {
+                    reject(err)
+                })
+            } else {
+                reject(new Error('AI Prompt API not supported in this browser.'))
+            }
+        })
+    }
 
     useEffect(() => {
-        if(!listening && transcript.trim() !== ''){
+        if (!listening && transcript.trim() !== '') {
             extractCommand();
         }
     }, [listening, transcript])
+
+    useEffect(() => {
+        if (error) {
+            setTimeout(() => {
+                setError(null)
+            }, 5000)
+        }
+    }, [error])
 
     return (
         <div>
@@ -148,13 +188,14 @@ const ContentScript = () => {
                     <DragHandle badgeCount={0} />
                     <Button
                         size='small'
-                        sx={{ 
+                        sx={{
                             color: 'black',
-                            width: 10, 
-                            margin: 0, 
-                            padding: 0, 
-                            fontSize: 14, 
-                            textTransform: 'none' }}
+                            width: 10,
+                            margin: 0,
+                            padding: 0,
+                            fontSize: 14,
+                            textTransform: 'none'
+                        }}
                         onClick={(event) => {
                             setOpen(!open)
                             if (open) {
@@ -193,6 +234,7 @@ const ContentScript = () => {
                                 disabled={!listening}
                                 onClick={SpeechRecognition.stopListening}>Stop</Button>
                             <Button onClick={resetTranscript}>Reset</Button>
+                            {isLoading && <CircularProgress size="18px" />}
                             <p>Text: {transcript}</p>
                             {error && <p>error: {error}</p>}
                         </div>

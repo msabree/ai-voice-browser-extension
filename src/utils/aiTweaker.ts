@@ -24,7 +24,7 @@ export const extractCommandFromText = (text: string) => {
 export const extractURLFromText = (text: string) => {
 
     // Google AI loves markdown stars, so we need to remove them.
-    const cleanedText = text.replace(/\*/g, '');
+    const cleanedText = text.replace(/\*/g, '').replace(/`/g, '');
     const urlPattern = /https?:\/\/[^\s/$.?#].[^\s]*/i;
 
     // Match the URL in the text
