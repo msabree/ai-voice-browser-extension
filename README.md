@@ -14,7 +14,13 @@ The **AI Voice Browser** is a Chrome extension that uses voice recognition and G
 ## Features
 
 - Integrates with Google's Built in AI to convert the voice text into web commands.
-- Supports NAVIGATE command currently with more comming in the future.
+- *NAVIGATE TO URL* - Browse to any website.
+- *SEARCH CURRENT PAGE* - Finds inputs on current page and performs queries.
+- *SCROLL* - Scrolls up and down the page.
+- *REFRESH PAGE* - Refreshes the page.
+- *CLICK LINK* - Click on any link just by describing the text.
+- *VIDEO CONTROLS* - Stop, play, pause, mute, and unmute a video.
+- *More commands coming soon*
 - Open-source project with contributions welcome.
 
 ## Installation

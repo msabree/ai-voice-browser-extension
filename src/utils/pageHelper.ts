@@ -54,3 +54,29 @@ export const getClickableLinks = () => {
     
     return clickableLinks.filter(link => link.text && link.url);
   }
+
+export const getFirstVideoInView = () => {
+    // Get all video elements on the page
+    const videos = document.querySelectorAll('video');
+    
+    // Loop through each video element
+    for (let i = 0; i < videos.length; i++) {
+        const video = videos[i];
+        
+        // Get the position of the video relative to the viewport
+        const rect = video.getBoundingClientRect();
+
+        // Check if the video is in the viewport (fully or partially)
+        if (
+            rect.top >= 0 &&                // Video is not above the viewport
+            rect.left >= 0 &&               // Video is not off to the left of the viewport
+            rect.bottom <= window.innerHeight &&  // Video is not below the viewport
+            rect.right <= window.innerWidth    // Video is not off to the right of the viewport
+        ) {
+            return video;  // Return the first video that is in view
+        }
+    }
+    
+    // Return null if no video is in view
+    return null;
+}
